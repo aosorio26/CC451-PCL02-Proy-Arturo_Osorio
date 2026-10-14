@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ciudad Escucha — Prototipo SPA Unificado</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              petrol: '#116A83',
+              dark: '#0c4959',
+              blue: '#1877D2',
+              teal: '#18B6A4',
+              surface: '#F5F8FA',
+              card: '#FFFFFF',
+              warning: '#F3A54B',
+              danger: '#E85D65',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background-color: #0f172a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 16px;
+    }
+
+    /* Contenedor Mockup Móvil 390x844 */
+    #phone-frame {
+      width: 390px;
+      height: 844px;
+      max-height: 92vh;
+      border-radius: 44px;
+      background: #F5F8FA;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 10px #1e293b, 0 0 0 12px #334155;
+    }
+
+    /* Scrollbars elegantes */
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(17, 106, 131, 0.2);
+      border-radius: 10px;
+    }
+
+    /* Animación de Ondas y Pulsos */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.15); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .animate-bubble-pulse {
+      animation: pulse-ring 2.8s infinite ease-in-out;
+    }
+
+    @keyframes soundwave {
+      0%, 100% { height: 8px; }
+      50% { height: 32px; }
+    }
+    .wave-bar:nth-child(1) { animation: soundwave 1.1s infinite ease-in-out 0.1s; }
+    .wave-bar:nth-child(2) { animation: soundwave 0.9s infinite ease-in-out 0.2s; }
+    .wave-bar:nth-child(3) { animation: soundwave 1.3s infinite ease-in-out 0.15s; }
+    .wave-bar:nth-child(4) { animation: soundwave 0.8s infinite ease-in-out 0.3s; }
+    .wave-bar:nth-child(5) { animation: soundwave 1.2s infinite ease-in-out 0.05s; }
+
+    /* Modos de accesibilidad en tiempo real */
+    .accessibility-large-text {
+      font-size: 115% !important;
+    }
+    .accessibility-xlarge-text {
+      font-size: 130% !important;
+    }
+    .accessibility-high-contrast {
+      filter: contrast(135%) saturate(120%);
+    }
+    .accessibility-high-contrast #phone-frame {
+      background: #ffffff !important;
+    }
+    .accessibility-high-contrast .bg-white {
+      border: 1.5px solid #000000 !important;
+    }
+    .accessibility-reduce-motion * {
+      animation: none !important;
+      transition: none !important;
+    }
+
+    /* Diseño pulido, sin superposiciones en la cabecera */
+    * { box-sizing: border-box; }
+    html, body { width: 100%; }
+    .app-statusbar { height: 38px; padding: 9px 24px 5px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; background:white; color:#273445; border-bottom: 1px solid #edf2f5; }
+    .status-time { font-size:12px; font-weight:800; letter-spacing:.02em; }
+    .status-icons { display:flex; align-items:center; gap:5px; }
+    .status-icons .material-symbols-outlined { font-size:15px; }
+    #app-global-bar { gap: 10px; min-height:70px; }
+    #app-global-bar > div:first-child { min-width:0; flex:1; }
+    #app-global-bar h1 { white-space:nowrap; font-size:13px; }
+    #app-global-bar > div:last-child { flex-shrink:0; }
+    #app-global-bar > div:last-child button { padding:8px 9px; font-size:10px; }
+    #role-context-banner { min-height:31px; }
+    #main-viewport { min-height:0; overscroll-behavior:contain; }
+    .toast-message { position:absolute; top:48px; left:16px; right:16px; padding:12px; display:flex; align-items:center; gap:8px; border-radius:14px; background:#182b3b; color:white; box-shadow:0 12px 30px #0003; z-index:60; opacity:0; visibility:hidden; pointer-events:none; transform:translateY(-10px); transition:opacity .2s ease,transform .2s ease,visibility .2s; font-size:12px; }
+    .toast-message.toast-visible { opacity:1; visibility:visible; transform:translateY(0); }
+    #incident-bottom-sheet { margin-top:0 !important; border-radius:20px 20px 0 0; }
+    button { touch-action:manipulation; }
+    button:focus-visible, input:focus-visible { outline:3px solid #1877d2; outline-offset:2px; }
+    @media (max-width:440px) {
+      body { padding:0; background:#f5f8fa; }
+      #phone-frame { height:100dvh; max-height:none; width:100%; border-radius:0; box-shadow:none; }
+    }
+    @media (max-width:360px) {
+      #app-global-bar { padding-left:10px; padding-right:10px; }
+      #app-global-bar h1 { font-size:12px; }
+      #app-global-bar > div:last-child button { padding:7px; font-size:9px; }
+    }
+  </style>
+</head>
+<body>
+<!-- Mockup Móvil SPA -->
+<div class="relative text-slate-800 select-none" id="phone-frame">
+<!-- Barra de estado simple: sin notch ni elementos superpuestos -->
+<header class="app-statusbar" aria-label="Estado del dispositivo">
+  <span class="status-time">9:41</span>
+  <div class="status-icons" aria-hidden="true"><span class="material-symbols-outlined">signal_cellular_alt</span><span class="material-symbols-outlined">wifi</span><span class="material-symbols-outlined">battery_full</span></div>
+</header>
+<!-- Encabezado compacto -->
+<div class="bg-white px-4 py-2.5 border-b border-slate-100 flex items-center justify-between z-20 shrink-0 shadow-sm" id="app-global-bar">
+<div class="flex items-center space-x-2">
+<div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-petrol to-brand-teal flex items-center justify-center text-white shadow-sm">
+<span class="material-symbols-outlined text-lg">location_city</span>
+</div>
+<div>
+<div class="flex items-center space-x-1">
+<h1 class="text-sm font-extrabold text-slate-900 tracking-tight">Ciudad Escucha</h1>
+
+</div>
+<div class="text-[10px] text-slate-500 flex items-center font-medium">
+<span class="material-symbols-outlined text-[11px] mr-0.5 text-brand-petrol">pin_drop</span>
+<span id="current-district-label">Lima • Rímac (UNI)</span>
+</div>
+</div>
+</div>
+<!-- Roles unificados: ciudadano incluye la participación vecinal -->
+<div class="flex items-center bg-slate-100 p-1 rounded-xl text-[11px] font-bold border border-slate-200">
+<button class="px-3 py-2 rounded-lg bg-white text-brand-petrol shadow-sm" id="role-btn-ciudadano" onclick="setRole('ciudadano')">Ciudadano</button>
+<button class="px-3 py-2 rounded-lg text-slate-600" id="role-btn-operador" onclick="setRole('operador')">Operador</button>
+</div>
+</div>
+<!-- Enlace accesible sin banda contextual permanente -->
+<div class="bg-white px-4 py-1 flex items-center justify-end border-b border-slate-100" id="role-context-banner">
+<span class="sr-only" id="role-description-text">Ciudadano: explora, reporta y apoya incidencias.</span>
+<button class="text-brand-petrol font-semibold flex items-center text-[11px]" onclick="navigateTo('accesibilidad')"><span class="material-symbols-outlined text-sm mr-1">accessibility_new</span>Accesibilidad</button>
+</div>
+<!-- CONTENEDOR PRINCIPAL DE PANTALLAS (Scrollable SPA Viewport) -->
+<main class="flex-1 overflow-y-auto custom-scroll relative bg-brand-surface" id="main-viewport">
+<!-- ========================================== -->
+<!-- VISTA 1: EXPLORAR / MAPA DE BURBUJAS (ESCENARIO A Y C) -->
+<!-- ========================================== -->
+<section class="min-h-full flex flex-col relative pb-20" id="view-explorar">
+<!-- Barra de Búsqueda y Filtros Rápidos -->
+<div class="p-3 bg-white/90 backdrop-blur-md sticky top-0 z-20 border-b border-slate-100 space-y-2">
+<div class="flex items-center space-x-2">
+<div class="flex-1 bg-slate-100 rounded-xl px-3 py-2 flex items-center space-x-2 text-xs border border-slate-200 focus-within:border-brand-petrol">
+<span class="material-symbols-outlined text-slate-400 text-sm">search</span>
+<input class="bg-transparent border-none outline-none w-full text-xs text-slate-800 placeholder-slate-400" id="map-search-input" oninput="filterIncidentsBySearch(this.value)" placeholder="Buscar problemas en tu ciudad..." type="text"/>
+</div>
+<button class="bg-white border border-slate-200 text-slate-700 px-2.5 py-2 rounded-xl text-[11px] font-bold flex items-center space-x-1 shadow-sm active:scale-95" id="view-mode-toggle-btn" onclick="toggleMapViewMode()">
+<span class="material-symbols-outlined text-sm text-brand-petrol" id="view-mode-icon">view_list</span>
+<span id="view-mode-text">Lista</span>
+</button>
+</div>
+<!-- Filtro simple -->
+<div class="text-[11px] text-slate-500 px-1">Selecciona un punto del mapa para ver su información.</div>
+</div>
+<!-- MODO 1: MAPA CARTOGRÁFICO DE BURBUJAS INTERACTIVAS -->
+<div class="relative w-full h-[520px] bg-gradient-to-b from-[#e8f1f5] via-[#f1f5f9] to-[#dbeafe] overflow-hidden" id="interactive-map-container">
+<!-- Cuadrícula cartográfica de Lima y Río Rímac simulado -->
+<svg class="absolute inset-0 w-full h-full opacity-40 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<pattern height="40" id="grid" patternunits="userSpaceOnUse" width="40">
+<path d="M 40 0 L 0 0 0 40" fill="none" stroke="#94a3b8" stroke-dasharray="2,2" stroke-width="0.5"></path>
+</pattern>
+</defs>
+<rect fill="url(#grid)" height="100%" width="100%"></rect>
+<!-- Río Rímac estilizado -->
+<path d="M-20 280 Q 120 270 200 310 T 420 320" fill="none" opacity="0.6" stroke="#38bdf8" stroke-width="8"></path>
+<!-- Vía de Evitamiento / Panamericana Norte -->
+<path d="M 190 0 L 195 270 L 210 520" fill="none" stroke="#cbd5e1" stroke-width="4"></path>
+<path d="M 60 210 Q 195 240 330 200" fill="none" stroke="#cbd5e1" stroke-width="3"></path>
+</svg>
+<!-- Referencias Geográficas de Distritos -->
+<div class="absolute top-8 left-16 text-[10px] font-extrabold uppercase tracking-widest text-slate-400/80 pointer-events-none">Los Olivos</div>
+<div class="absolute top-24 left-8 text-[10px] font-extrabold uppercase tracking-widest text-slate-400/80 pointer-events-none">S.M.P.</div>
+<div class="absolute top-44 left-36 text-[11px] font-black uppercase tracking-wider text-brand-petrol/60 pointer-events-none">Rímac • UNI</div>
+<div class="absolute top-72 left-32 text-[10px] font-extrabold uppercase tracking-widest text-slate-400/80 pointer-events-none">Cercado de Lima</div>
+<div class="absolute bottom-28 left-20 text-[10px] font-extrabold uppercase tracking-widest text-slate-400/80 pointer-events-none">Jesús María</div>
+<div class="absolute bottom-16 right-10 text-[10px] font-extrabold uppercase tracking-widest text-slate-400/80 pointer-events-none">Surco / Miraflores</div>
+<!-- BURBUJA 1: INC-001 (Rímac UNI - 24 apoyos - Pistas) -->
+<div class="incident-bubble absolute top-40 left-36 cursor-pointer group z-10 transition-transform active:scale-90" id="bubble-INC-001" onclick="selectIncident('INC-001')">
+<div class="relative flex items-center justify-center">
+<div class="absolute w-20 h-20 rounded-full bg-brand-petrol/20 animate-bubble-pulse pointer-events-none"></div>
+<div class="w-16 h-16 rounded-full bg-gradient-to-tr from-brand-petrol to-sky-600 text-white flex flex-col items-center justify-center shadow-lg border-2 border-white ring-4 ring-brand-petrol/30 transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-base">construction</span>
+<span class="text-[12px] font-black leading-none">24</span>
+<span class="text-[8px] font-bold tracking-tighter opacity-90">RÍMAC UNI</span>
+</div>
+<span class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 border-2 border-white rounded-full"></span>
+</div>
+</div>
+<!-- BURBUJA 2: INC-002 (Los Olivos - 18 apoyos - Residuos) -->
+<div class="incident-bubble absolute top-12 left-44 cursor-pointer group z-10 transition-transform active:scale-90" id="bubble-INC-002" onclick="selectIncident('INC-002')">
+<div class="w-13 h-13 p-2 rounded-full bg-gradient-to-tr from-rose-600 to-rose-400 text-white flex flex-col items-center justify-center shadow-md border-2 border-white group-hover:scale-105">
+<span class="material-symbols-outlined text-sm">delete_sweep</span>
+<span class="text-[11px] font-black leading-none">18</span>
+<span class="text-[7px] font-bold">L. OLIVOS</span>
+</div>
+</div>
+<!-- BURBUJA 3: INC-003 (SMP - 12 apoyos - Alumbrado) -->
+<div class="incident-bubble absolute top-28 left-10 cursor-pointer group z-10 transition-transform active:scale-90" id="bubble-INC-003" onclick="selectIncident('INC-003')">
+<div class="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 to-amber-400 text-white flex flex-col items-center justify-center shadow-md border-2 border-white group-hover:scale-105">
+<span class="material-symbols-outlined text-xs">lightbulb</span>
+<span class="text-[10px] font-black leading-none">12</span>
+<span class="text-[7px] font-bold">SMP</span>
+</div>
+</div>
+<!-- BURBUJA 4: INC-005 (Miraflores - 31 apoyos - Semáforo) -->
+<div class="incident-bubble absolute bottom-12 right-12 cursor-pointer group z-10 transition-transform active:scale-90" id="bubble-INC-005" onclick="selectIncident('INC-005')">
+<div class="w-15 h-15 p-2.5 rounded-full bg-gradient-to-tr from-sky-600 to-teal-500 text-white flex flex-col items-center justify-center shadow-lg border-2 border-white ring-2 ring-sky-300 group-hover:scale-105">
+<span class="material-symbols-outlined text-sm">traffic</span>
+<span class="text-[12px] font-black leading-none">31</span>
+<span class="text-[7px] font-bold">MIRAFLORES</span>
+</div>
+</div>
+<!-- BURBUJA 5: INC-007 (San Miguel - 7 apoyos - Áreas Verdes Resuelto) -->
+<div class="incident-bubble absolute bottom-24 left-10 cursor-pointer group z-10 transition-transform active:scale-90" id="bubble-INC-007" onclick="selectIncident('INC-007')">
+<div class="w-11 h-11 rounded-full bg-gradient-to-tr from-emerald-600 to-emerald-400 text-white flex flex-col items-center justify-center shadow-md border-2 border-white group-hover:scale-105">
+<span class="material-symbols-outlined text-xs">park</span>
+<span class="text-[10px] font-black leading-none">7</span>
+<span class="text-[7px] font-bold">S. MIGUEL</span>
+</div>
+</div>
+<!-- BURBUJA 6: INC-012 (Cercado de Lima - 22 apoyos) -->
+<div class="incident-bubble absolute top-64 left-28 cursor-pointer group z-10 transition-transform active:scale-90" id="bubble-INC-012" onclick="selectIncident('INC-012')">
+<div class="w-13 h-13 p-2 rounded-full bg-gradient-to-tr from-teal-700 to-teal-500 text-white flex flex-col items-center justify-center shadow-md border-2 border-white group-hover:scale-105">
+<span class="material-symbols-outlined text-sm">cleaning_services</span>
+<span class="text-[11px] font-black leading-none">22</span>
+<span class="text-[7px] font-bold">CERCADO</span>
+</div>
+</div>
+<!-- Ubicación -->
+<div class="absolute right-3 top-4 z-20">
+<button class="w-10 h-10 rounded-xl bg-white shadow-md border border-slate-200 flex items-center justify-center text-brand-petrol" onclick="centerMapOnUNI()" title="Centrar en UNI" aria-label="Centrar mapa en UNI"><span class="material-symbols-outlined text-xl">my_location</span></button>
+</div>
+<!-- Píldora de ubicación fija -->
+<div class="absolute bottom-4 left-3 z-20 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-200 shadow-sm flex items-center space-x-1.5 text-[11px] text-slate-700">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+<span class="font-bold">Sector UNI Puerta 3</span>
+<span class="text-slate-400">• Lima Norte</span>
+</div>
+</div>
+<!-- MODO 2: VISTA DE LISTA ACCESIBLE (WCAG - Alternativa al mapa) -->
+<div class="hidden p-4 space-y-3" id="accessible-list-container">
+<div class="bg-blue-50 border border-blue-200 rounded-2xl p-3 text-xs text-blue-900 flex items-start space-x-2">
+<span class="material-symbols-outlined text-blue-600 text-lg">accessibility</span>
+<div>
+<p class="font-bold">Vista de Lista Accesible (ISO 9241-11)</p>
+<p class="text-[11px] text-blue-700 mt-0.5">Ordenada linealmente por cercanía y apoyos comunitarios para lectores de pantalla.</p>
+</div>
+</div>
+<div class="space-y-2.5" id="accessible-incident-cards">
+<!-- Se inyectan dinámicamente -->
+</div>
+</div>
+<!-- BOTTOM SHEET DE DETALLES DE INCIDENCIA (Deslizable y reactivo) -->
+<div class="bg-white border-t border-slate-200 rounded-t-3xl shadow-2xl p-4 transition-all duration-300 z-30 -mt-6" id="incident-bottom-sheet">
+<div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-3"></div>
+<div class="flex items-start justify-between">
+<div>
+<div class="flex items-center space-x-2">
+<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-800" id="sheet-status-badge">
+                  Reportado
+                </span>
+<span class="text-xs font-mono font-bold text-slate-500" id="sheet-code">INC-001</span>
+<span class="text-xs text-slate-500 font-medium" id="sheet-district">• Rímac</span>
+</div>
+<h3 class="text-base font-bold text-slate-900 mt-1 leading-snug" id="sheet-title">
+                Pista deteriorada cerca de la avenida Túpac Amaru
+              </h3>
+</div>
+<!-- Botón Cerrar Sheet -->
+<button class="text-slate-400 hover:text-slate-600 p-1" onclick="closeIncidentBottomSheet()">
+<span class="material-symbols-outlined text-lg">close</span>
+</button>
+</div>
+<!-- Dirección y Fotografía -->
+<div class="mt-3 bg-slate-50 rounded-2xl p-3 border border-slate-100 flex items-center space-x-3">
+<div class="w-16 h-16 rounded-xl bg-slate-200 overflow-hidden relative shrink-0">
+<img alt="Evidencia de bache" class="w-full h-full object-cover" id="sheet-image" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+<span class="absolute bottom-1 right-1 bg-black/60 text-white text-[8px] px-1 rounded font-mono">IA Val</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-bold text-slate-800 truncate" id="sheet-address">Av. Túpac Amaru cdra 3 (Cerca Puerta 3 UNI)</p>
+<p class="text-[11px] text-slate-600 line-clamp-2 mt-0.5" id="sheet-desc">Bache profundo en carril derecho obstaculiza transporte público hacia Plaza Norte.</p>
+<div class="flex items-center space-x-2 mt-1.5 text-[10px] text-slate-500 font-semibold">
+<span class="flex items-center text-brand-petrol">
+<span class="material-symbols-outlined text-xs mr-0.5">thumb_up</span>
+<span id="sheet-supports-count">24</span> apoyos
+                </span>
+<span>• Reportado ayer</span>
+</div>
+</div>
+</div>
+<!-- Botones de Acción Inmediata (Norman: Feedback Conductual) -->
+<div class="grid grid-cols-4 gap-2 mt-3">
+<button class="col-span-2 bg-brand-petrol hover:bg-brand-dark text-white rounded-xl py-2.5 px-3 font-bold text-xs flex items-center justify-center space-x-1.5 shadow-sm active:scale-95 transition-all" id="btn-support-action" onclick="toggleSupportCurrentIncident()">
+<span class="material-symbols-outlined text-sm" id="btn-support-icon">thumb_up</span>
+<span id="btn-support-label">Apoyar reporte</span>
+</button>
+<button class="col-span-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl py-2.5 px-2 font-bold text-xs flex flex-col items-center justify-center text-center active:scale-95" onclick="readAloudIncident()">
+<span class="material-symbols-outlined text-sm text-brand-petrol">volume_up</span>
+<span class="text-[9px] mt-0.5">Escuchar</span>
+</button>
+<button class="col-span-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl py-2.5 px-2 font-bold text-xs flex flex-col items-center justify-center text-center active:scale-95" onclick="shareIncidentModal()">
+<span class="material-symbols-outlined text-sm text-brand-petrol">share</span>
+<span class="text-[9px] mt-0.5">Difundir</span>
+</button>
+</div>
+<!-- Botón Ver Detalles Completos -->
+<button class="w-full mt-2.5 py-2 text-center text-brand-petrol font-bold text-xs hover:underline flex items-center justify-center space-x-1" onclick="navigateTo('detalle-incidencia')">
+<span>Ver historial de verificación y cuadrilla municipal</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- VISTA 2: ASISTENTE DE VOZ & MULTIMODAL IA (ESCENARIO B) -->
+<!-- ========================================== -->
+<section class="hidden min-h-full p-4 pb-24 space-y-4" id="view-voz">
+<!-- Encabezado de Voz -->
+<div class="bg-gradient-to-r from-brand-petrol to-brand-blue text-white p-4 rounded-3xl shadow-md">
+<div class="flex items-center justify-between mb-2">
+<span class="text-[10px] font-extrabold uppercase tracking-wider bg-white/20 px-2.5 py-0.5 rounded-full">Multimodal Gemini Civic</span>
+<span class="flex items-center text-[10px] space-x-1">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+<span>Procesamiento Quechua / Castellano</span>
+</span>
+</div>
+<h2 class="text-lg font-bold">Interacción por Voz Ciudadana</h2>
+<p class="text-xs text-white/80 mt-1">Describe el problema urbano con tus propias palabras cotidianas de Lima.</p>
+</div>
+<!-- Área Central del Micrófono y Ondas -->
+<div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm text-center flex flex-col items-center">
+<div class="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-6" id="voice-status-pill">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+<span id="voice-status-text">Listo para hablar</span>
+</div>
+<!-- Botón de Micrófono Táctil -->
+<div class="relative mb-6">
+<div class="hidden absolute -inset-3 rounded-full bg-brand-petrol/20 animate-ping" id="voice-pulse-ring"></div>
+<button class="w-24 h-24 rounded-full bg-gradient-to-tr from-brand-petrol to-sky-600 text-white flex items-center justify-center shadow-xl active:scale-95 transition-all" id="mic-main-button" onclick="toggleVoiceRecording()">
+<span class="material-symbols-outlined text-4xl" id="mic-icon-state">mic</span>
+</button>
+</div>
+<!-- Ondas de Audio Simuladas -->
+<div class="h-8 flex items-center justify-center space-x-1 mb-4" id="voice-soundwaves">
+<div class="wave-bar w-1 bg-brand-petrol rounded-full h-2"></div>
+<div class="wave-bar w-1 bg-brand-petrol rounded-full h-4"></div>
+<div class="wave-bar w-1 bg-brand-teal rounded-full h-6"></div>
+<div class="wave-bar w-1 bg-brand-petrol rounded-full h-3"></div>
+<div class="wave-bar w-1 bg-brand-blue rounded-full h-2"></div>
+</div>
+<p class="text-xs text-slate-500 max-w-xs leading-relaxed" id="voice-instructions-text">
+            Toca el micrófono y di: <em>"Quiero reportar un hueco grande en la pista cerca de la UNI, en el Rímac"</em>.
+          </p>
+<!-- Ejemplos rápidos para rellenar simulación -->
+<div class="flex flex-wrap justify-center gap-1.5 mt-4">
+<button class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg font-medium" onclick="loadSimulatedVoiceText(1)">
+              "Hueco cerca a la UNI"
+            </button>
+<button class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg font-medium" onclick="loadSimulatedVoiceText(2)">
+              "Semáforo roto Miraflores"
+            </button>
+<button class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg font-medium" onclick="loadSimulatedVoiceText(3)">
+              "Basura en Los Olivos"
+            </button>
+</div>
+</div>
+<!-- Tarjeta de Transcripción Acústica -->
+<div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm space-y-2">
+<div class="flex items-center justify-between">
+<span class="text-xs font-bold text-slate-700 flex items-center">
+<span class="material-symbols-outlined text-sm mr-1 text-brand-petrol">record_voice_over</span>
+              Tu Entrada de Voz
+            </span>
+<button class="text-[10px] font-bold text-brand-petrol hover:underline flex items-center" onclick="playVoiceInputSimulation()">
+<span class="material-symbols-outlined text-xs mr-0.5">play_circle</span> Escuchar audio
+            </button>
+</div>
+<p class="text-xs italic text-slate-800 bg-slate-50 p-3 rounded-xl border border-slate-100" id="voice-transcript-output">
+            "Quiero reportar un hueco grande en la pista cerca de la UNI, en el Rímac..."
+          </p>
+<div class="flex items-center justify-between text-[10px] text-slate-400">
+<span class="flex items-center text-emerald-600 font-semibold">
+<span class="material-symbols-outlined text-xs mr-1">check_circle</span> Transcripción acústica precisa
+            </span>
+<span>Capturado 09:41 AM</span>
+</div>
+</div>
+<!-- Interpretación y Reformulación Gemini Civic -->
+<div class="bg-white rounded-3xl p-4 border-2 border-brand-petrol/20 shadow-sm space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-1.5">
+<span class="material-symbols-outlined text-brand-petrol text-base">auto_awesome</span>
+<span class="text-xs font-black text-slate-900">Interpretación Gemini Civic</span>
+</div>
+<span class="text-[9px] bg-brand-petrol/10 text-brand-petrol px-2 py-0.5 rounded-md font-bold">IA Asistiva</span>
+</div>
+<p class="text-xs text-slate-600">
+            Entendí que deseas reportar una pista dañada en Lima Norte. He estructurado tu borrador preliminar:
+          </p>
+<div class="space-y-2 text-xs">
+<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+<span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Categoría Sugerida</span>
+<div class="flex items-center justify-between mt-0.5 font-bold text-slate-800">
+<span class="flex items-center text-brand-petrol">
+<span class="material-symbols-outlined text-xs mr-1">construction</span> Infraestructura Vial / Pistas
+                </span>
+<span class="text-emerald-600 text-[10px]">98% Confianza</span>
+</div>
+</div>
+<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+<span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Ubicación Deducida</span>
+<div class="flex items-center justify-between mt-0.5 font-bold text-slate-800">
+<span>Av. Túpac Amaru, Rímac (Zona UNI)</span>
+<button class="text-brand-petrol text-[10px] hover:underline" onclick="navigateTo('explorar')">Ajustar mapa</button>
+</div>
+</div>
+<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+<span class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Descripción Técnica para el Operador</span>
+<p class="text-[11px] text-slate-700 mt-1 leading-snug">
+                "Se observa foramen asfáltico de aprox. 1.2m de diámetro que obstaculiza el tránsito vehicular y pone en riesgo a ciclistas y peatones con dirección al trébol de Caquetá."
+              </p>
+</div>
+</div>
+<!-- Mensaje de Transparencia de IA (Requisito de Usabilidad y Ética) -->
+<div class="bg-amber-50 border border-amber-200 rounded-xl p-2.5 text-[10px] text-amber-900 flex items-start space-x-1.5">
+<span class="material-symbols-outlined text-amber-600 text-sm shrink-0">info</span>
+<span>Esta sugerencia fue generada por IA. Nada se publica sin tu confirmación expresa y voluntaria.</span>
+</div>
+<!-- Acciones hacia Flujo de Reporte -->
+<div class="flex flex-col space-y-2 pt-1">
+<button class="w-full bg-brand-petrol hover:bg-brand-dark text-white rounded-xl py-3 font-bold text-xs flex items-center justify-center space-x-1 shadow-md active:scale-95 transition-all" onclick="acceptVoiceDraftAndContinue()">
+<span>Aceptar y Pasar a Confirmación</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+<div class="flex space-x-2">
+<button class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl text-xs font-bold text-center" onclick="editVoiceDraftText()">
+                Editar Texto
+              </button>
+<button class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl text-xs font-bold text-center" onclick="restartVoiceRecording()">
+                Re-grabar Audio
+              </button>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- VISTA 3: FLUJO COMPLETO DE NUEVO REPORTE Y DETECCIÓN DUPLICADOS (ESCENARIO B Y C) -->
+<!-- ========================================== -->
+<section class="hidden min-h-full p-4 pb-24 space-y-4" id="view-reportar">
+<!-- Indicador de Pasos del Flujo de Reporte -->
+<div class="bg-white rounded-2xl p-3 border border-slate-100 shadow-sm flex items-center justify-between text-xs font-bold">
+<div class="flex items-center space-x-1 text-brand-petrol">
+<span class="w-5 h-5 rounded-full bg-brand-petrol text-white flex items-center justify-center text-[10px]">1</span>
+<span>Datos</span>
+</div>
+<div class="w-8 h-0.5 bg-brand-petrol"></div>
+<div class="flex items-center space-x-1 text-brand-petrol">
+<span class="w-5 h-5 rounded-full bg-brand-petrol text-white flex items-center justify-center text-[10px]">2</span>
+<span>Detección</span>
+</div>
+<div class="w-8 h-0.5 bg-slate-200"></div>
+<div class="flex items-center space-x-1 text-slate-400">
+<span class="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px]">3</span>
+<span>Validación</span>
+</div>
+</div>
+<!-- MÓDULO DESTACADO: DETECCIÓN GEO-INTELIGENTE DE DUPLICADOS (45 metros) -->
+<div class="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-brand-blue/30 rounded-3xl p-4 shadow-sm space-y-3">
+<div class="flex items-start space-x-2">
+<div class="w-9 h-9 rounded-2xl bg-brand-blue text-white flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-lg">join_inner</span>
+</div>
+<div>
+<div class="flex items-center space-x-1">
+<span class="text-xs font-extrabold text-brand-blue uppercase tracking-wider">Detección Geo-Inteligente</span>
+<span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+</div>
+<h3 class="text-sm font-extrabold text-slate-900 mt-0.5">¡Incidencia similar a solo 45m!</h3>
+<p class="text-[11px] text-slate-600 leading-snug mt-1">
+                Detectamos un caso casi idéntico. Unir fuerzas amplifica la prioridad en el sistema municipal del Rímac.
+              </p>
+</div>
+</div>
+<!-- Tarjeta del Reporte Duplicado Detectado -->
+<div class="bg-white rounded-2xl p-3 border border-blue-100 shadow-xs space-y-2">
+<div class="flex items-center justify-between text-[11px]">
+<span class="font-bold text-slate-700">INC-001 • Av. Túpac Amaru</span>
+<span class="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full text-[10px]">24 vecinos apoyan</span>
+</div>
+<p class="text-xs text-slate-600 line-clamp-2">"Pista con hueco profundo que daña neumáticos frente a puerta 3 UNI..."</p>
+<div class="flex space-x-2 pt-1">
+<button class="flex-1 bg-brand-petrol hover:bg-brand-dark text-white py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 shadow-sm active:scale-95" onclick="supportDuplicateAndFinish()">
+<span class="material-symbols-outlined text-sm">thumb_up</span>
+<span>Sumar mi Apoyo</span>
+</button>
+<button class="px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 rounded-xl text-xs font-bold" onclick="showDetailsFromDuplicate()">
+                Ver detalle
+              </button>
+</div>
+</div>
+<div class="text-center">
+<span class="text-[10px] text-slate-500 font-medium">— o continuar creando un reporte independiente —</span>
+</div>
+</div>
+<!-- Formulario de Entrada y Evidencia -->
+<div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm space-y-4">
+<h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Detalles de la Incidencia</h4>
+<!-- Categoría -->
+<div>
+<label class="block text-xs font-bold text-slate-700 mb-1">Categoría</label>
+<div class="grid grid-cols-2 gap-2 text-xs font-bold">
+<button class="p-2.5 rounded-xl border-2 border-brand-petrol bg-brand-petrol/5 text-brand-petrol flex items-center space-x-2" type="button">
+<span class="material-symbols-outlined text-sm">construction</span>
+<span>Pistas y Veredas</span>
+</button>
+<button class="p-2.5 rounded-xl border border-slate-200 text-slate-600 flex items-center space-x-2 hover:bg-slate-50" type="button">
+<span class="material-symbols-outlined text-sm">delete</span>
+<span>Residuos</span>
+</button>
+</div>
+</div>
+<!-- Ubicación -->
+<div>
+<label class="block text-xs font-bold text-slate-700 mb-1">Ubicación Precisa</label>
+<div class="flex items-center space-x-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs">
+<span class="material-symbols-outlined text-brand-petrol text-base">pin_drop</span>
+<input class="bg-transparent border-none outline-none w-full font-medium text-slate-800" id="report-input-location" type="text" value="Av. Túpac Amaru cdra 3, Rímac (Frente a UNI)"/>
+<button class="text-[10px] text-brand-petrol font-bold shrink-0" onclick="navigateTo('explorar')">Mapa</button>
+</div>
+</div>
+<!-- Evidencia Fotográfica con Análisis IA -->
+<div>
+<label class="block text-xs font-bold text-slate-700 mb-1">Fotografía de Evidencia</label>
+<div class="relative rounded-2xl overflow-hidden border border-slate-200 h-36 bg-slate-100 group">
+<img alt="Bache inspeccionado" class="w-full h-full object-cover" id="report-photo-preview" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-2.5 text-white">
+<div class="flex items-center justify-between text-[10px]">
+<span class="bg-emerald-500 text-white font-extrabold px-2 py-0.5 rounded-md">Bache Profundo (98.4%)</span>
+<span>Área ~1.2m²</span>
+</div>
+<p class="text-[9px] text-slate-200 mt-0.5">Capturado en Av. Túpac Amaru • Severidad Alta</p>
+</div>
+</div>
+</div>
+<!-- Botones de Continuar / Atrás -->
+<div class="flex space-x-2 pt-2">
+<button class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl text-xs font-bold active:scale-95 transition-all" onclick="navigateBack()">
+              Atrás
+            </button>
+<button class="flex-2 w-2/3 bg-brand-petrol hover:bg-brand-dark text-white py-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 shadow-md active:scale-95 transition-all" onclick="submitNewReportFlow()">
+<span>Continuar a Confirmación</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- VISTA 3.5: CONFIRMACIÓN DE ÉXITO DE REPORTE -->
+<!-- ========================================== -->
+<section class="hidden min-h-full p-4 pb-24 flex flex-col items-center justify-center text-center space-y-4" id="view-reporte-exitoso">
+<div class="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shadow-lg animate-bounce">
+<span class="material-symbols-outlined text-4xl">check_circle</span>
+</div>
+<div>
+<span class="text-xs font-bold text-emerald-600 uppercase tracking-wider">¡Reporte Enviado al Sistema Municipal!</span>
+<h2 class="text-xl font-extrabold text-slate-900 mt-1">INC-013 Registrado</h2>
+<p class="text-xs text-slate-500 max-w-xs mt-1">
+            Tu contribución cívica en Av. Túpac Amaru ingresó a la bandeja de despacho del Rímac.
+          </p>
+</div>
+<div class="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm w-full max-w-xs text-left text-xs space-y-2">
+<div class="flex justify-between py-1 border-b border-slate-100">
+<span class="text-slate-500">Distrito</span>
+<span class="font-bold text-slate-800">Rímac (Lima Norte)</span>
+</div>
+<div class="flex justify-between py-1 border-b border-slate-100">
+<span class="text-slate-500">Categoría</span>
+<span class="font-bold text-slate-800">Infraestructura Vial</span>
+</div>
+<div class="flex justify-between py-1 border-b border-slate-100">
+<span class="text-slate-500">Estado inicial</span>
+<span class="font-bold text-amber-600">Reportado</span>
+</div>
+<div class="flex justify-between py-1">
+<span class="text-slate-500">Impacto colectivo</span>
+<span class="font-bold text-brand-petrol">+1,200 vecinos en ruta</span>
+</div>
+</div>
+<div class="w-full max-w-xs space-y-2 pt-2">
+<button class="w-full bg-brand-petrol hover:bg-brand-dark text-white py-3 rounded-xl text-xs font-bold shadow-md active:scale-95" onclick="navigateTo('explorar')">
+            Volver al Mapa de Burbujas
+          </button>
+<button class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl text-xs font-bold" onclick="navigateTo('mis-reportes')">
+            Ver Seguimiento en Mis Reportes
+          </button>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- VISTA 4: PANEL DE OPERADOR MUNICIPAL (ESCENARIO D) -->
+<!-- ========================================== -->
+<section class="hidden min-h-full p-4 pb-24 space-y-4" id="view-operador">
+<!-- Banner del Operador -->
+<div class="bg-slate-900 text-white p-4 rounded-3xl shadow-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+<span class="text-xs font-bold text-emerald-400">DESPACHO EN VIVO</span>
+</div>
+<span class="text-[10px] bg-white/10 px-2 py-0.5 rounded font-mono">SUP-LIM-849</span>
+</div>
+<h2 class="text-base font-bold mt-1">Gerencia de Operaciones • Lima Centro y Norte</h2>
+<p class="text-[11px] text-slate-400">Supervisión y asignación de cuadrillas para reportes vecinales.</p>
+<!-- Métricas de Despacho en Vivo -->
+<div class="grid grid-cols-3 gap-2 mt-4 text-center">
+<div class="bg-white/10 rounded-xl p-2">
+<span class="text-lg font-black text-rose-400">42</span>
+<span class="block text-[9px] text-slate-300">Nuevos hoy</span>
+</div>
+<div class="bg-white/10 rounded-xl p-2">
+<span class="text-lg font-black text-amber-400" id="metric-cuadrilla-count">18</span>
+<span class="block text-[9px] text-slate-300">En Cuadrilla</span>
+</div>
+<div class="bg-white/10 rounded-xl p-2">
+<span class="text-lg font-black text-emerald-400">85%</span>
+<span class="block text-[9px] text-slate-300">Resueltos</span>
+</div>
+</div>
+</div>
+<!-- Incidencia en Atención de Campo -->
+<div class="bg-white rounded-3xl p-4 border border-slate-200 shadow-sm space-y-3">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono font-bold text-brand-petrol">INC-001 (Av. Túpac Amaru)</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800" id="operator-current-status-tag">
+              En Cuadrilla (Paso 3)
+            </span>
+</div>
+<h3 class="text-sm font-bold text-slate-900">Bache crítico en carril derecho • 24 vecinos suscritos</h3>
+<!-- Selector de Estado de Trabajo Municipal -->
+<div>
+<label class="block text-[11px] font-bold text-slate-600 mb-2">Actualizar Estado Operativo Municipal:</label>
+<div class="grid grid-cols-2 gap-2 text-xs font-bold">
+<button class="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center space-x-1.5" id="op-state-reportado" onclick="updateOperatorState('Reportado')">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span>1. Reportado</span>
+</button>
+<button class="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center space-x-1.5" id="op-state-revision" onclick="updateOperatorState('En Revisión')">
+<span class="material-symbols-outlined text-sm">manage_search</span>
+<span>2. En Revisión</span>
+</button>
+<button class="p-2.5 rounded-xl border-2 border-brand-petrol bg-brand-petrol text-white flex items-center space-x-1.5 shadow-sm" id="op-state-cuadrilla" onclick="updateOperatorState('En Cuadrilla')">
+<span class="material-symbols-outlined text-sm">engineering</span>
+<span>3. En Cuadrilla</span>
+</button>
+<button class="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center space-x-1.5" id="op-state-resuelto" onclick="updateOperatorState('Resuelto')">
+<span class="material-symbols-outlined text-sm">task_alt</span>
+<span>4. Resuelto</span>
+</button>
+</div>
+</div>
+<!-- Observación Oficial para Vecinos -->
+<div>
+<label class="block text-[11px] font-bold text-slate-600 mb-1">Nota Oficial Pública (Visible para vecinos):</label>
+<textarea class="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 outline-none focus:border-brand-petrol" id="operator-note-input" rows="2">Cuadrilla de bacheo pesado programada para mañana 10:00 AM con emulsión asfáltica en frío.</textarea>
+</div>
+<!-- Botón Notificar a Vecinos -->
+<button class="w-full bg-brand-petrol hover:bg-brand-dark text-white rounded-xl py-3 font-bold text-xs flex items-center justify-center space-x-1.5 shadow-md active:scale-95 transition-all" onclick="saveOperatorStateAndNotify()">
+<span class="material-symbols-outlined text-sm">notifications_active</span>
+<span>Guardar y Notificar a 24 Vecinos</span>
+</button>
+</div>
+<!-- Lista de Otras Incidencias en Bandeja -->
+<div class="space-y-2">
+<h4 class="text-xs font-bold text-slate-700">Otras incidencias en cola</h4>
+<div class="bg-white p-3 rounded-2xl border border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-50" onclick="selectIncident('INC-002')">
+<div>
+<p class="text-xs font-bold text-slate-800">INC-002 • Acumulación de basura</p>
+<p class="text-[10px] text-slate-500">Los Olivos • 18 apoyos • Pendiente</p>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</div>
+<div class="bg-white p-3 rounded-2xl border border-slate-200 flex items-center justify-between cursor-pointer hover:bg-slate-50" onclick="selectIncident('INC-005')">
+<div>
+<p class="text-xs font-bold text-slate-800">INC-005 • Semáforo apagado</p>
+<p class="text-[10px] text-slate-500">Miraflores • 31 apoyos • En Cuadrilla</p>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- VISTA 5: ACCESIBILIDAD Y PERSONALIZACIÓN (ESCENARIO E) -->
+<!-- ========================================== -->
+<section class="hidden min-h-full p-4 pb-24 space-y-4" id="view-accesibilidad">
+<!-- Encabezado de Accesibilidad -->
+<div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm flex items-center space-x-3">
+<div class="w-12 h-12 rounded-2xl bg-brand-petrol/10 text-brand-petrol flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-2xl">accessibility_new</span>
+</div>
+<div>
+<h2 class="text-sm font-bold text-slate-900">Accesibilidad Universal y Sensorial</h2>
+<p class="text-[11px] text-slate-500">Normativa WCAG 2.2 Nivel AAA para inclusión cívica en Lima.</p>
+</div>
+</div>
+<!-- Ajustes de Visualización y Tipografía -->
+<div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm space-y-3">
+<h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center">
+<span class="material-symbols-outlined text-sm mr-1 text-brand-petrol">format_size</span>
+            Escala de Lectura
+          </h3>
+<div class="grid grid-cols-3 gap-2 text-xs font-bold">
+<button class="p-2.5 rounded-xl border-2 border-brand-petrol bg-brand-petrol text-white text-center" id="text-scale-normal" onclick="setTextScale('normal')">
+              Normal (100%)
+            </button>
+<button class="p-2.5 rounded-xl border border-slate-200 text-slate-700 text-center hover:bg-slate-50" id="text-scale-large" onclick="setTextScale('large')">
+              Grande (115%)
+            </button>
+<button class="p-2.5 rounded-xl border border-slate-200 text-slate-700 text-center hover:bg-slate-50" id="text-scale-xlarge" onclick="setTextScale('xlarge')">
+              Extra (130%)
+            </button>
+</div>
+<!-- Modos de Contraste -->
+<div class="pt-2">
+<label class="block text-xs font-bold text-slate-700 mb-1.5">Contraste y Visibilidad</label>
+<div class="grid grid-cols-2 gap-2 text-xs font-bold">
+<button class="p-2.5 rounded-xl border-2 border-brand-petrol bg-brand-petrol/10 text-brand-petrol flex items-center justify-center space-x-1" id="contrast-standard-btn" onclick="setContrastMode('standard')">
+<span class="material-symbols-outlined text-sm">palette</span>
+<span>Estándar Cívico</span>
+</button>
+<button class="p-2.5 rounded-xl border border-slate-200 text-slate-700 flex items-center justify-center space-x-1 hover:bg-slate-50" id="contrast-high-btn" onclick="setContrastMode('high')">
+<span class="material-symbols-outlined text-sm">contrast</span>
+<span>Alto Contraste AAA</span>
+</button>
+</div>
+</div>
+<!-- Reducir Movimiento Toggle -->
+<div class="flex items-center justify-between pt-2 border-t border-slate-100">
+<div>
+<p class="text-xs font-bold text-slate-800">Reducir Movimiento</p>
+<p class="text-[10px] text-slate-500">Desactiva pulsos y transiciones vivas</p>
+</div>
+<button class="w-11 h-6 bg-slate-200 rounded-full relative transition-colors" id="reduce-motion-toggle" onclick="toggleReduceMotion()">
+<span class="w-5 h-5 bg-white rounded-full absolute left-0.5 top-0.5 transition-transform" id="reduce-motion-knob"></span>
+</button>
+</div>
+</div>
+<!-- Asistencia Sensorial y Táctil -->
+<div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm space-y-3">
+<h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center">
+<span class="material-symbols-outlined text-sm mr-1 text-brand-petrol">touch_app</span>
+            Asistencia Sensorial
+          </h3>
+<div class="flex items-center justify-between py-1">
+<div>
+<p class="text-xs font-bold text-slate-800">Narración Automática por Voz</p>
+<p class="text-[10px] text-slate-500">Lee en español los botones y las opciones que pulses</p>
+</div>
+<button class="w-11 h-6 bg-slate-200 rounded-full relative transition-colors" id="voice-narration-toggle" type="button" aria-label="Activar o desactivar lectura por voz" aria-pressed="false" onclick="toggleVoiceNarrationSetting()">
+<span class="w-5 h-5 bg-white rounded-full absolute left-0.5 top-0.5 transition-transform" id="voice-narration-knob"></span>
+</button>
+</div>
+<div class="rounded-xl bg-slate-50 border border-slate-200 px-3 py-3 space-y-2">
+  <p class="text-xs text-slate-600">Activa la narración y pulsa cualquier botón. Usa esta prueba para comprobar el volumen de tu equipo.</p>
+  <div class="flex gap-2">
+    <button type="button" class="flex-1 rounded-xl bg-brand-petrol text-white px-3 py-2.5 text-xs font-bold" data-speech-control="test" onclick="testVoiceNarration()">🔊 Probar voz</button>
+    <button type="button" class="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs font-bold" data-speech-control="stop" onclick="stopVoiceNarration()">Detener</button>
+  </div>
+  <p id="voice-feedback" class="text-[11px] text-slate-600" role="status" aria-live="polite">Narración desactivada.</p>
+</div>
+<div class="flex items-center justify-between py-1 border-t border-slate-100">
+<div>
+<p class="text-xs font-bold text-slate-800">Vista Lista Prioritaria</p>
+<p class="text-[10px] text-slate-500">Reemplaza mapa gráfico por una lista lineal directa</p>
+</div>
+<button class="w-11 h-6 bg-slate-200 rounded-full relative transition-colors" id="default-list-toggle" onclick="toggleDefaultViewModeSetting()">
+<span class="w-5 h-5 bg-white rounded-full absolute left-0.5 top-0.5 transition-transform" id="default-list-knob"></span>
+</button>
+</div>
+<!-- Botón de prueba en vivo -->
+<button class="w-full mt-3 bg-brand-petrol hover:bg-brand-dark text-white rounded-xl py-3 font-bold text-xs shadow-md active:scale-95 transition-all" onclick="navigateTo('explorar')">
+            Probar Configuración en el Mapa
+          </button>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- VISTA 6: ACTIVIDAD COMUNITARIA & VECINAL (ESCENARIO C) -->
+<!-- ========================================== -->
+<section class="hidden min-h-full p-4 pb-24 space-y-3" id="view-actividad">
+<div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm">
+<div class="flex items-center justify-between">
+<h2 class="text-sm font-bold text-slate-900">Muro Cívico de Lima</h2>
+<span class="text-[10px] font-bold text-brand-petrol bg-brand-petrol/10 px-2 py-0.5 rounded-md">Tiempo Real</span>
+</div>
+<p class="text-[11px] text-slate-500 mt-0.5">Reportes y apoyos vecinales verificados en las últimas 24h.</p>
+</div>
+<!-- Feed de Actividad Comunitario -->
+<div class="space-y-2.5">
+<div class="bg-white rounded-2xl p-3 border border-slate-100 shadow-xs flex space-x-3 cursor-pointer hover:bg-slate-50" onclick="selectIncident('INC-001')">
+<div class="w-10 h-10 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-lg">thumb_up</span>
+</div>
+<div class="flex-1">
+<p class="text-xs font-bold text-slate-800">24 vecinos apoyaron: Pista deteriorada en la UNI</p>
+<p class="text-[11px] text-slate-500">Rímac • Hace 12 minutos</p>
+<div class="mt-1 flex items-center text-[10px] font-bold text-brand-petrol">
+<span>Ver avance con cuadrilla municipal</span>
+<span class="material-symbols-outlined text-xs ml-0.5">arrow_forward</span>
+</div>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-3 border border-slate-100 shadow-xs flex space-x-3 cursor-pointer hover:bg-slate-50" onclick="selectIncident('INC-005')">
+<div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-lg">engineering</span>
+</div>
+<div class="flex-1">
+<p class="text-xs font-bold text-slate-800">Cuadrilla asignada a semáforo en Miraflores</p>
+<p class="text-[11px] text-slate-500">Municipalidad de Miraflores • Hace 1 hora</p>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-3 border border-slate-100 shadow-xs flex space-x-3 cursor-pointer hover:bg-slate-50" onclick="selectIncident('INC-007')">
+<div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-lg">check_circle</span>
+</div>
+<div class="flex-1">
+<p class="text-xs font-bold text-slate-800">Área verde restaurada en San Miguel</p>
+<p class="text-[11px] text-slate-500">Resuelto exitosamente • Hace 3 horas</p>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- VISTA 7: MIS REPORTES & SEGUIMIENTO -->
+<!-- ========================================== -->
+<section class="hidden min-h-full p-4 pb-24 space-y-3" id="view-mis-reportes">
+<div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm flex items-center justify-between">
+<div>
+<h2 class="text-sm font-bold text-slate-900">Mis Reportes Ciudadanos</h2>
+<p class="text-[11px] text-slate-500">Monitorea tus incidencias y apoyos activos.</p>
+</div>
+<button class="bg-brand-petrol text-white p-2 rounded-xl text-xs font-bold flex items-center space-x-1 shadow-sm" onclick="navigateTo('voz')">
+<span class="material-symbols-outlined text-sm">add</span>
+<span>Nuevo</span>
+</button>
+</div>
+<div class="space-y-2.5">
+<div class="bg-white rounded-2xl p-3 border border-slate-100 shadow-xs cursor-pointer hover:bg-slate-50 space-y-2" onclick="selectIncident('INC-001')">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono font-bold text-brand-petrol">INC-001</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800" id="my-report-status-tag">En Cuadrilla</span>
+</div>
+<h4 class="text-xs font-bold text-slate-800">Pista deteriorada cerca de la UNI</h4>
+<div class="flex items-center justify-between text-[11px] text-slate-500">
+<span>Av. Túpac Amaru • Rímac</span>
+<span class="font-bold text-brand-petrol">24 apoyos</span>
+</div>
+</div>
+<div class="bg-white rounded-2xl p-3 border border-slate-100 shadow-xs cursor-pointer hover:bg-slate-50 space-y-2">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono font-bold text-slate-400">INC-011</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">Resuelto</span>
+</div>
+<h4 class="text-xs font-bold text-slate-800">Vereda obstruida en San Isidro</h4>
+<div class="flex items-center justify-between text-[11px] text-slate-500">
+<span>Calle Los Pinos • San Isidro</span>
+<span>18 de Octubre</span>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- VISTA 8: PERFIL & CONFIGURACIÓN -->
+<!-- ========================================== -->
+<section class="hidden min-h-full p-4 pb-24 space-y-4" id="view-perfil">
+<div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm text-center">
+<div class="w-16 h-16 rounded-full bg-gradient-to-tr from-brand-petrol to-brand-teal text-white flex items-center justify-center mx-auto text-2xl font-bold shadow-md">
+            LM
+          </div>
+<h2 class="text-base font-bold text-slate-900 mt-2">Ciudadano de Lima Norte</h2>
+<p class="text-xs text-slate-500">Estudiante UNI • Rímac, Lima</p>
+<div class="flex justify-center space-x-2 mt-3">
+<span class="text-[10px] bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full font-bold">3 Reportes creados</span>
+<span class="text-[10px] bg-brand-petrol/10 text-brand-petrol px-2.5 py-1 rounded-full font-bold">14 Apoyos otorgados</span>
+</div>
+</div>
+<div class="bg-white rounded-3xl p-2 border border-slate-100 shadow-sm space-y-1 text-xs">
+<button class="w-full p-3 rounded-2xl hover:bg-slate-50 flex items-center justify-between text-slate-800 font-bold" onclick="navigateTo('voz')"><div class="flex items-center space-x-2.5"><span class="material-symbols-outlined text-brand-petrol">mic</span><span>Reportar con voz</span></div><span class="material-symbols-outlined text-slate-400">chevron_right</span></button>
+<button class="w-full p-3 rounded-2xl hover:bg-slate-50 flex items-center justify-between text-slate-800 font-bold" onclick="navigateTo('accesibilidad')">
+<div class="flex items-center space-x-2.5">
+<span class="material-symbols-outlined text-brand-petrol">accessibility_new</span>
+<span>Accesibilidad Universal</span>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</button>
+<button class="w-full p-3 rounded-2xl hover:bg-slate-50 flex items-center justify-between text-slate-800 font-bold" onclick="navigateTo('mis-reportes')">
+<div class="flex items-center space-x-2.5">
+<span class="material-symbols-outlined text-brand-petrol">assignment</span>
+<span>Mis Reportes e Historial</span>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</button>
+<button class="w-full p-3 rounded-2xl hover:bg-slate-50 flex items-center justify-between text-slate-800 font-bold" onclick="setRole('operador')">
+<div class="flex items-center space-x-2.5">
+<span class="material-symbols-outlined text-brand-petrol">badge</span>
+<span>Ir al panel de operador</span>
+</div>
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- ========================================== -->
+<!-- VISTA 9: DETALLE EXTENDIDO DE INCIDENCIA -->
+<!-- ========================================== -->
+<section class="hidden min-h-full p-4 pb-24 space-y-4" id="view-detalle-incidencia">
+<!-- Barra de retroceso -->
+<div class="flex items-center justify-between">
+<button class="flex items-center space-x-1 text-xs font-bold text-brand-petrol" onclick="navigateBack()">
+<span class="material-symbols-outlined text-base">arrow_back</span>
+<span>Volver</span>
+</button>
+<span class="text-xs font-mono font-bold text-slate-500" id="detail-code">INC-001</span>
+</div>
+<div class="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm">
+<img alt="Detalle de bache" class="w-full h-44 object-cover" id="detail-image" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+<div class="p-4 space-y-3">
+<div class="flex items-center justify-between">
+<span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800" id="detail-status">
+                En Cuadrilla
+              </span>
+<span class="text-xs font-bold text-brand-petrol" id="detail-supports-count">24 vecinos apoyan</span>
+</div>
+<h2 class="text-base font-bold text-slate-900 leading-snug" id="detail-title">
+              Pista deteriorada cerca de la avenida Túpac Amaru
+            </h2>
+<p class="text-xs text-slate-600 leading-relaxed" id="detail-desc">
+              Bache profundo en carril derecho. Genera alto congestionamiento en horas punta hacia el trébol de Caquetá y peligro de accidentes para motociclistas.
+            </p>
+</div>
+</div>
+<!-- Línea de Tiempo de Atención Municipal -->
+<div class="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm space-y-3">
+<h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Línea de Tiempo de Atención</h3>
+<div class="space-y-3 text-xs pl-2 border-l-2 border-brand-petrol">
+<div class="relative pl-3">
+<span class="absolute -left-[19px] top-0.5 w-3 h-3 rounded-full bg-brand-petrol border-2 border-white"></span>
+<p class="font-bold text-slate-800">Reportado por Vecino UNI</p>
+<p class="text-[10px] text-slate-500">Ayer a las 14:20 • Vía voz multimodal</p>
+</div>
+<div class="relative pl-3">
+<span class="absolute -left-[19px] top-0.5 w-3 h-3 rounded-full bg-brand-petrol border-2 border-white"></span>
+<p class="font-bold text-slate-800">Inspección Sereno Rímac (Móvil 04)</p>
+<p class="text-[10px] text-slate-500">Hoy 09:15 • Peligro vial confirmado</p>
+</div>
+<div class="relative pl-3">
+<span class="absolute -left-[19px] top-0.5 w-3 h-3 rounded-full bg-blue-600 border-2 border-white animate-pulse"></span>
+<p class="font-bold text-blue-800" id="detail-timeline-current-step">Cuadrilla Asignada</p>
+<p class="text-[10px] text-slate-500" id="detail-timeline-note">Bacheo en frío programado por Municipalidad del Rímac</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- NOTIFICACIÓN TOAST IN-APP DINÁMICA -->
+<div class="toast-message" id="toast-notification" role="status" aria-live="polite">
+<span class="material-symbols-outlined text-emerald-400 text-lg" id="toast-icon">check_circle</span>
+<div class="flex-1">
+<p class="font-bold" id="toast-title">Acción realizada</p>
+<p class="text-[10px] text-slate-300" id="toast-message">Mensaje informativo</p>
+</div>
+</div>
+<!-- MODAL DE LEYENDA CARTOGRÁFICA -->
+<div class="hidden absolute inset-0 bg-black/50 backdrop-blur-xs z-50 flex items-center justify-center p-4" id="modal-leyenda">
+<div class="bg-white rounded-3xl p-5 max-w-xs w-full shadow-2xl space-y-3">
+<div class="flex items-center justify-between">
+<h3 class="text-sm font-bold text-slate-900">Leyenda del Mapa</h3>
+<button class="text-slate-400 hover:text-slate-600" onclick="toggleLegendModal()">
+<span class="material-symbols-outlined text-lg">close</span>
+</button>
+</div>
+<div class="space-y-2 text-xs text-slate-600">
+<div class="flex items-center space-x-2">
+<span class="w-3.5 h-3.5 rounded-full bg-brand-petrol"></span>
+<span>Tamaño: Proporcional a cantidad de reportes/apoyos</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="w-3.5 h-3.5 rounded-full bg-sky-500"></span>
+<span>Pistas y Bacheo Vial</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="w-3.5 h-3.5 rounded-full bg-rose-500"></span>
+<span>Residuos Sólidos</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="w-3.5 h-3.5 rounded-full bg-amber-500"></span>
+<span>Alumbrado y Electricidad</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="w-3.5 h-3.5 rounded-full bg-emerald-500"></span>
+<span>Parques y Áreas Verdes</span>
+</div>
+</div>
+<button class="w-full bg-brand-petrol text-white py-2 rounded-xl text-xs font-bold" onclick="toggleLegendModal()">
+          Entendido
+        </button>
+</div>
+</div>
+<!-- GLOBAL BOTTOM NAVIGATION BAR FIJA (390px) -->
+<nav class="bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 py-2 flex items-center justify-around z-40 shrink-0 shadow-lg">
+<button class="nav-button flex flex-col items-center py-1 text-brand-petrol font-bold active:scale-95 transition-all" id="nav-btn-explorar" onclick="navigateTo('explorar')">
+<span class="material-symbols-outlined text-xl">map</span>
+<span class="text-[10px] mt-0.5">Explorar</span>
+</button>
+<!-- Botón central flotante de Reportar -->
+<button class="nav-button flex flex-col items-center py-1 text-slate-500 hover:text-slate-900" id="nav-btn-reportar" onclick="navigateTo('reportar')"><span class="material-symbols-outlined text-xl">add_location_alt</span><span class="text-[10px] mt-0.5">Reportar</span></button>
+<button class="nav-button flex flex-col items-center py-1 text-slate-500 hover:text-slate-900 active:scale-95 transition-all" id="nav-btn-actividad" onclick="navigateTo('actividad')">
+<span class="material-symbols-outlined text-xl">diversity_3</span>
+<span class="text-[10px] mt-0.5">Actividad</span>
+</button>
+<button class="nav-button flex flex-col items-center py-1 text-slate-500 hover:text-slate-900 active:scale-95 transition-all" id="nav-btn-perfil" onclick="navigateTo('perfil')">
+<span class="material-symbols-outlined text-xl">person</span>
+<span class="text-[10px] mt-0.5">Perfil</span>
+</button>
+</nav>
+<!-- Indicador de Barra Home iOS/Android -->
+<div class="h-1.5 w-32 bg-slate-900/40 rounded-full mx-auto my-1 shrink-0 z-40 pointer-events-none"></div>
+</div>
+<!-- SCRIPT VANILLA JS: GESTIÓN DE RUTAS, ESTADOS REACTIVOS Y ESCENARIOS -->
+<script>
+    // Base de datos de incidencias de Lima Metropolitana simulada
+    const incidentsData = [
+      {
+        id: 'INC-001',
+        title: 'Pista deteriorada cerca de la avenida Túpac Amaru',
+        category: 'pistas',
+        categoryLabel: 'Pistas y Veredas',
+        district: 'Rímac (Lima Norte)',
+        address: 'Av. Túpac Amaru cdra 3 (Frente a Puerta 3 UNI)',
+        status: 'En Cuadrilla',
+        supports: 24,
+        userSupported: false,
+        image: 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=600&auto=format&fit=crop&q=80',
+        desc: 'Bache profundo en carril derecho. Genera alto congestionamiento en horas punta hacia el trébol de Caquetá y riesgo para estudiantes y ciclistas de la UNI.'
+      },
+      {
+        id: 'INC-002',
+        title: 'Acumulación de residuos en una calle de Los Olivos',
+        category: 'residuos',
+        categoryLabel: 'Residuos Sólidos',
+        district: 'Los Olivos',
+        address: 'Av. Carlos Izaguirre cdra 8',
+        status: 'En Revisión',
+        supports: 18,
+        userSupported: false,
+        image: 'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=600&auto=format&fit=crop&q=80',
+        desc: 'Desmonte y bolsas de basura acumuladas en la berma central dificultando el paso de peatones.'
+      },
+      {
+        id: 'INC-003',
+        title: 'Alumbrado público averiado en San Martín de Porres',
+        category: 'alumbrado',
+        categoryLabel: 'Alumbrado Público',
+        district: 'San Martín de Porres',
+        address: 'Av. Perú cdra 18',
+        status: 'Reportado',
+        supports: 12,
+        userSupported: false,
+        image: 'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=600&auto=format&fit=crop&q=80',
+        desc: 'Dos postes sin iluminación generan inseguridad nocturna en el paradero principal.'
+      },
+      {
+        id: 'INC-005',
+        title: 'Semáforo averiado en cruce vial de Miraflores',
+        category: 'pistas',
+        categoryLabel: 'Semáforos y Señalización',
+        district: 'Miraflores',
+        address: 'Av. José Larco con Benavides',
+        status: 'En Revisión',
+        supports: 31,
+        userSupported: false,
+        image: 'https://images.unsplash.com/photo-1572025442646-866d16c84a54?w=600&auto=format&fit=crop&q=80',
+        desc: 'Semáforo intermitente descalibrado genera congestión en hora punta.'
+      },
+      {
+        id: 'INC-007',
+        title: 'Área verde deteriorada en San Miguel',
+        category: 'parques',
+        categoryLabel: 'Áreas Verdes',
+        district: 'San Miguel',
+        address: 'Parque Juan Pablo II',
+        status: 'Resuelto',
+        supports: 7,
+        userSupported: false,
+        image: 'https://images.unsplash.com/photo-1519331379826-f10be5486c6f?w=600&auto=format&fit=crop&q=80',
+        desc: 'Riego recuperado y mantenimiento de césped completado por cuadrilla distrital.'
+      },
+      {
+        id: 'INC-012',
+        title: 'Acumulación de basura en Cercado de Lima',
+        category: 'residuos',
+        categoryLabel: 'Residuos Sólidos',
+        district: 'Cercado de Lima',
+        address: 'Jr. de la Unión cdra 11',
+        status: 'Resuelto',
+        supports: 22,
+        userSupported: false,
+        image: 'https://images.unsplash.com/photo-1605600659908-0ef719419d41?w=600&auto=format&fit=crop&q=80',
+        desc: 'Recojo completado en turno nocturno municipal.'
+      }
+    ];
+
+    // Estados de navegación SPA
+    let currentRoute = 'explorar';
+    let navigationHistory = ['explorar'];
+    let currentRole = 'ciudadano';
+    let selectedIncidentId = 'INC-001';
+    let isVoiceRecording = false;
+    let isMapView = true;
+
+    // Configuración de accesibilidad activa
+    const accessibilityState = {
+      textScale: 'normal',
+      contrast: 'standard',
+      reduceMotion: false,
+      voiceNarration: false,
+      defaultListView: false
+    };
+
+    // Inicialización al cargar el DOM
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAccessibleList();
+      selectIncident('INC-001');
+      closeIncidentBottomSheet();
+    });
+
+    // ROUTER SPA CLIENT-SIDE
+    function navigateTo(routeName) {
+      const targetView = document.getElementById(`view-${routeName}`);
+      if (!targetView) return;
+      document.querySelectorAll('#main-viewport > section').forEach(view => view.classList.add('hidden'));
+      targetView.classList.remove('hidden');
+      if (currentRoute !== routeName) navigationHistory.push(routeName);
+      currentRoute = routeName;
+      updateBottomNavActiveState(routeName);
+      document.getElementById('main-viewport').scrollTop = 0;
+    }
+
+    function navigateBack() {
+      if (navigationHistory.length > 1) {
+        navigationHistory.pop(); // quitar actual
+        const previousRoute = navigationHistory[navigationHistory.length - 1];
+        
+        const views = document.querySelectorAll('main > section');
+        views.forEach(view => view.classList.add('hidden'));
+
+        const targetView = document.getElementById(`view-${previousRoute}`);
+        if (targetView) {
+          targetView.classList.remove('hidden');
+          currentRoute = previousRoute;
+          updateBottomNavActiveState(previousRoute);
+        }
+      } else {
+        navigateTo('explorar');
+      }
+    }
+
+    function updateBottomNavActiveState(route) {
+      const navButtons = document.querySelectorAll('.nav-button');
+      navButtons.forEach(btn => {
+        btn.classList.remove('text-brand-petrol', 'font-bold');
+        btn.classList.add('text-slate-500');
+      });
+
+      const activeBtn = document.getElementById(`nav-btn-${route}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-500');
+        activeBtn.classList.add('text-brand-petrol', 'font-bold');
+      }
+    }
+
+    // Ciudadano unifica las funciones antes divididas entre ciudadano y vecino.
+    function setRole(role) {
+      if (role !== 'ciudadano' && role !== 'operador') role = 'ciudadano';
+      currentRole = role;
+      const ciudadano = document.getElementById('role-btn-ciudadano');
+      const operador = document.getElementById('role-btn-operador');
+      [ciudadano, operador].forEach(btn => {
+        btn.className = 'px-3 py-2 rounded-lg text-slate-600 font-bold';
+      });
+      const active = role === 'ciudadano' ? ciudadano : operador;
+      active.className = 'px-3 py-2 rounded-lg bg-white text-brand-petrol shadow-sm font-bold';
+      document.getElementById('role-description-text').textContent = role === 'ciudadano'
+        ? 'Ciudadano: explora, reporta y apoya incidencias.'
+        : 'Operador: gestiona incidencias municipales.';
+      navigateTo(role === 'ciudadano' ? 'explorar' : 'operador');
+    }
+
+    // SELECCIÓN Y BOTTOM SHEET DE INCIDENCIAS
+    function selectIncident(id) {
+      selectedIncidentId = id;
+      const inc = incidentsData.find(i => i.id === id);
+      if (!inc) return;
+
+      // Actualizar Bottom Sheet
+      document.getElementById('sheet-code').textContent = inc.id;
+      document.getElementById('sheet-title').textContent = inc.title;
+      document.getElementById('sheet-district').textContent = `• ${inc.district}`;
+      document.getElementById('sheet-address').textContent = inc.address;
+      document.getElementById('sheet-desc').textContent = inc.desc;
+      document.getElementById('sheet-supports-count').textContent = inc.supports;
+      document.getElementById('sheet-status-badge').textContent = inc.status;
+      document.getElementById('sheet-image').src = inc.image;
+
+      // Color del badge
+      const badge = document.getElementById('sheet-status-badge');
+      if (inc.status === 'Resuelto') {
+        badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-emerald-100 text-emerald-800';
+      } else if (inc.status === 'En Cuadrilla') {
+        badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-blue-100 text-blue-800';
+      } else {
+        badge.className = 'px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-amber-100 text-amber-800';
+      }
+
+      // Estado del botón de apoyar
+      updateSupportButtonState(inc.userSupported);
+
+      // Mostrar bottom sheet si estamos en explorar
+      document.getElementById('incident-bottom-sheet').classList.remove('hidden');
+
+      // Actualizar también pantalla de detalle extendido
+      document.getElementById('detail-code').textContent = inc.id;
+      document.getElementById('detail-title').textContent = inc.title;
+      document.getElementById('detail-desc').textContent = inc.desc;
+      document.getElementById('detail-status').textContent = inc.status;
+      document.getElementById('detail-status').className = badge.className;
+      document.getElementById('detail-supports-count').textContent = `${inc.supports} vecinos apoyan`;
+      document.getElementById('detail-image').src = inc.image;
+    }
+
+    function closeIncidentBottomSheet() {
+      document.getElementById('incident-bottom-sheet').classList.add('hidden');
+    }
+
+    // ACCIONES DE APOYO (Norman: Nivel Conductual con retroalimentación inmediata)
+    function toggleSupportCurrentIncident() {
+      const inc = incidentsData.find(i => i.id === selectedIncidentId);
+      if (!inc) return;
+
+      if (!inc.userSupported) {
+        inc.supports += 1;
+        inc.userSupported = true;
+        showToast('¡Apoyo Registrado!', `Ahora son ${inc.supports} vecinos respaldando este caso.`, 'thumb_up');
+      } else {
+        inc.supports -= 1;
+        inc.userSupported = false;
+        showToast('Apoyo retirado', 'Has retirado tu apoyo a este caso.', 'undo');
+      }
+
+      document.getElementById('sheet-supports-count').textContent = inc.supports;
+      document.getElementById('detail-supports-count').textContent = `${inc.supports} vecinos apoyan`;
+      updateSupportButtonState(inc.userSupported);
+      renderAccessibleList(); // Sincronizar lista
+    }
+
+    function updateSupportButtonState(isSupported) {
+      const btn = document.getElementById('btn-support-action');
+      const label = document.getElementById('btn-support-label');
+      const icon = document.getElementById('btn-support-icon');
+
+      if (isSupported) {
+        btn.className = 'col-span-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-2.5 px-3 font-bold text-xs flex items-center justify-center space-x-1.5 shadow-sm active:scale-95 transition-all';
+        label.textContent = '¡Ya apoyaste (+1)!';
+        icon.textContent = 'check';
+      } else {
+        btn.className = 'col-span-2 bg-brand-petrol hover:bg-brand-dark text-white rounded-xl py-2.5 px-3 font-bold text-xs flex items-center justify-center space-x-1.5 shadow-sm active:scale-95 transition-all';
+        label.textContent = 'Apoyar reporte';
+        icon.textContent = 'thumb_up';
+      }
+    }
+
+    function readAloudIncident() {
+      const inc = incidentsData.find(i => i.id === selectedIncidentId);
+      if (!inc) return;
+      const textToRead = `${inc.title}. Ubicado en ${inc.district}. Estado actual: ${inc.status}. Tiene ${inc.supports} vecinos apoyando.`;
+      speakTextNotification(textToRead, true);
+      showToast('Lectura por Voz', textToRead, 'volume_up');
+    }
+
+    function shareIncidentModal() {
+      showToast('Enlace Copiado', 'Enlace ciudadano copiado al portapapeles para compartir en WhatsApp.', 'share');
+    }
+
+    // ALTERNAR VISTA DE MAPA Y VISTA DE LISTA ACCESIBLE
+    function toggleMapViewMode() {
+      isMapView = !isMapView;
+      const mapContainer = document.getElementById('interactive-map-container');
+      const listContainer = document.getElementById('accessible-list-container');
+      const modeBtnText = document.getElementById('view-mode-text');
+      const modeBtnIcon = document.getElementById('view-mode-icon');
+
+      if (isMapView) {
+        mapContainer.classList.remove('hidden');
+        listContainer.classList.add('hidden');
+        modeBtnText.textContent = 'Lista';
+        modeBtnIcon.textContent = 'view_list';
+      } else {
+        mapContainer.classList.add('hidden');
+        listContainer.classList.remove('hidden');
+        modeBtnText.textContent = 'Mapa';
+        modeBtnIcon.textContent = 'map';
+      }
+    }
+
+    function renderAccessibleList(filteredIncidents = incidentsData) {
+      const container = document.getElementById('accessible-incident-cards');
+      container.innerHTML = '';
+
+      filteredIncidents.forEach(inc => {
+        const card = document.createElement('div');
+        card.className = 'bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs flex items-start space-x-3 cursor-pointer hover:border-brand-petrol transition-all';
+        card.onclick = () => {
+          selectIncident(inc.id);
+          document.getElementById('incident-bottom-sheet').classList.remove('hidden');
+        };
+
+        card.innerHTML = `
+          <div class="w-12 h-12 rounded-xl bg-slate-100 overflow-hidden shrink-0 mt-0.5">
+            <img src="${inc.image}" alt="${inc.title}" class="w-full h-full object-cover">
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-mono font-bold text-slate-500">${inc.id}</span>
+              <span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
+                inc.status === 'Resuelto' ? 'bg-emerald-100 text-emerald-800' :
+                inc.status === 'En Cuadrilla' ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'
+              }">${inc.status}</span>
+            </div>
+            <h4 class="text-xs font-bold text-slate-900 mt-0.5 truncate">${inc.title}</h4>
+            <p class="text-[10px] text-slate-500">${inc.district}</p>
+            <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-100 text-[10px]">
+              <span class="font-bold text-brand-petrol flex items-center">
+                <span class="material-symbols-outlined text-xs mr-0.5">thumb_up</span> ${inc.supports} vecinos
+              </span>
+              <span class="text-brand-petrol font-semibold">Tocar para ver &rarr;</span>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // FILTROS Y BÚSQUEDA DEL MAPA
+    function filterMapCategory(cat) {
+      const pills = document.querySelectorAll('.category-pill');
+      pills.forEach(p => {
+        p.className = 'category-pill whitespace-nowrap px-3 py-1 rounded-full font-medium bg-white text-slate-600 border border-slate-200';
+      });
+
+      const activePill = document.getElementById(`filter-pill-${cat}`);
+      if (activePill) {
+        activePill.className = 'category-pill whitespace-nowrap px-3 py-1 rounded-full font-bold bg-brand-petrol text-white shadow-xs';
+      }
+
+      // Ocultar/mostrar burbujas según categoría
+      incidentsData.forEach(inc => {
+        const bubble = document.getElementById(`bubble-${inc.id}`);
+        if (!bubble) return;
+        if (cat === 'todos' || inc.category === cat) {
+          bubble.style.display = 'block';
+        } else {
+          bubble.style.display = 'none';
+        }
+      });
+
+      // Filtrar también en modo lista
+      if (cat === 'todos') {
+        renderAccessibleList(incidentsData);
+      } else {
+        const filtered = incidentsData.filter(i => i.category === cat);
+        renderAccessibleList(filtered);
+      }
+    }
+
+    function filterIncidentsBySearch(query) {
+      const q = query.toLowerCase().trim();
+      const filtered = incidentsData.filter(i => 
+        i.title.toLowerCase().includes(q) || 
+        i.district.toLowerCase().includes(q) ||
+        i.address.toLowerCase().includes(q)
+      );
+      renderAccessibleList(filtered);
+    }
+
+    function simulateMapZoom(direction) {
+      const bubbles = document.querySelectorAll('.incident-bubble');
+      bubbles.forEach(b => {
+        b.style.transform = direction > 0 ? 'scale(1.15)' : 'scale(0.95)';
+      });
+      setTimeout(() => {
+        bubbles.forEach(b => b.style.transform = 'scale(1)');
+      }, 300);
+      showToast('Zoom del Mapa', direction > 0 ? 'Acercando sector UNI Lima Norte' : 'Alejando vista general de Lima', 'zoom_in');
+    }
+
+    function centerMapOnUNI() {
+      showToast('Sector UNI Centrado', 'Coordenadas: Av. Túpac Amaru km 4.5, Rímac.', 'my_location');
+      selectIncident('INC-001');
+    }
+
+    function toggleLegendModal() {
+      const modal = document.getElementById('modal-leyenda');
+      modal.classList.toggle('hidden');
+    }
+
+    // FLUJO DE VOZ & ASISTENTE GEMINI (ESCENARIO B)
+    function toggleVoiceRecording() {
+      isVoiceRecording = !isVoiceRecording;
+      const ring = document.getElementById('voice-pulse-ring');
+      const micBtn = document.getElementById('mic-main-button');
+      const statusPill = document.getElementById('voice-status-pill');
+      const statusText = document.getElementById('voice-status-text');
+
+      if (isVoiceRecording) {
+        ring.classList.remove('hidden');
+        micBtn.className = 'w-24 h-24 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xl animate-pulse';
+        statusPill.className = 'inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 mb-6';
+        statusText.textContent = 'Escuchando tu voz en directo...';
+        showToast('Grabando Audio', 'Habla con naturalidad sobre el problema urbano.', 'mic');
+
+        // Simular finalización de escucha tras 3 segundos
+        setTimeout(() => {
+          if (isVoiceRecording) toggleVoiceRecording();
+        }, 3200);
+      } else {
+        ring.classList.add('hidden');
+        micBtn.className = 'w-24 h-24 rounded-full bg-gradient-to-tr from-brand-petrol to-sky-600 text-white flex items-center justify-center shadow-xl';
+        statusPill.className = 'inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 mb-6';
+        statusText.textContent = 'Audio procesado con Gemini Civic';
+        showToast('Audio Procesado', 'Se generó la propuesta estructurada para tu revisión.', 'auto_awesome');
+      }
+    }
+
+    function loadSimulatedVoiceText(option) {
+      const output = document.getElementById('voice-transcript-output');
+      if (option === 1) {
+        output.textContent = '"Quiero reportar un hueco grande en la pista cerca de la UNI, en el Rímac..."';
+      } else if (option === 2) {
+        output.textContent = '"El semáforo del cruce de Larco con Benavides en Miraflores está parpadeando y casi choco..."';
+      } else {
+        output.textContent = '"En Los Olivos han dejado un montón de basura y desmonte que huele feo..."';
+      }
+      showToast('Ejemplo cargado', 'Gemini Civic actualizó el borrador técnico.', 'task_alt');
+    }
+
+    function playVoiceInputSimulation() {
+      speakTextNotification(document.getElementById('voice-transcript-output').textContent, true);
+    }
+
+    function acceptVoiceDraftAndContinue() {
+      navigateTo('reportar');
+      showToast('Borrador Aceptado', 'Pasando a validación geo-inteligente de duplicados.', 'arrow_forward');
+    }
+
+    function editVoiceDraftText() {
+      showToast('Modo Edición', 'Puedes corregir la transcripción y detalles manualmente.', 'edit');
+    }
+
+    function restartVoiceRecording() {
+      toggleVoiceRecording();
+    }
+
+    // FLUJO DE REPORTE Y DUPLICADOS (ESCENARIO B Y C)
+    function supportDuplicateAndFinish() {
+      const inc = incidentsData.find(i => i.id === 'INC-001');
+      if (inc && !inc.userSupported) {
+        inc.supports += 1;
+        inc.userSupported = true;
+      }
+      showToast('¡Apoyo Sumado al Reporte!', 'Uniste tu reclamo a INC-001. Aumentaste su prioridad ante la Municipalidad del Rímac.', 'verified');
+      navigateTo('reporte-exitoso');
+    }
+
+    function showDetailsFromDuplicate() {
+      selectIncident('INC-001');
+      navigateTo('detalle-incidencia');
+    }
+
+    function submitNewReportFlow() {
+      navigateTo('reporte-exitoso');
+    }
+
+    // OPERADOR MUNICIPAL (ESCENARIO D)
+    function updateOperatorState(newState) {
+      const inc = incidentsData.find(i => i.id === 'INC-001');
+      if (inc) {
+        inc.status = newState;
+      }
+
+      // Actualizar tags de interfaz
+      document.getElementById('operator-current-status-tag').textContent = `${newState}`;
+      document.getElementById('my-report-status-tag').textContent = newState;
+      document.getElementById('sheet-status-badge').textContent = newState;
+      document.getElementById('detail-status').textContent = newState;
+      document.getElementById('detail-timeline-current-step').textContent = `Estado: ${newState}`;
+
+      // Estilo de botones de operador
+      const states = ['reportado', 'revision', 'cuadrilla', 'resuelto'];
+      states.forEach(s => {
+        const btn = document.getElementById(`op-state-${s}`);
+        if (btn) {
+          btn.className = 'p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center space-x-1.5';
+        }
+      });
+
+      if (newState === 'Reportado') {
+        document.getElementById('op-state-reportado').className = 'p-2.5 rounded-xl border-2 border-amber-500 bg-amber-500 text-white flex items-center space-x-1.5';
+      } else if (newState === 'En Revisión') {
+        document.getElementById('op-state-revision').className = 'p-2.5 rounded-xl border-2 border-sky-500 bg-sky-500 text-white flex items-center space-x-1.5';
+      } else if (newState === 'En Cuadrilla') {
+        document.getElementById('op-state-cuadrilla').className = 'p-2.5 rounded-xl border-2 border-brand-petrol bg-brand-petrol text-white flex items-center space-x-1.5';
+      } else if (newState === 'Resuelto') {
+        document.getElementById('op-state-resuelto').className = 'p-2.5 rounded-xl border-2 border-emerald-600 bg-emerald-600 text-white flex items-center space-x-1.5';
+      }
+
+      showToast('Estado Modificado', `INC-001 ahora está en: ${newState}`, 'sync');
+      renderAccessibleList();
+    }
+
+    function saveOperatorStateAndNotify() {
+      const note = document.getElementById('operator-note-input').value;
+      document.getElementById('detail-timeline-note').textContent = note;
+      showToast('Vecinos Notificados', 'Se emitió notificación push ciudadana a los 24 vecinos suscritos.', 'send');
+    }
+
+    // ACCESIBILIDAD Y PERSONALIZACIÓN (ESCENARIO E)
+    function setTextScale(scale) {
+      const phoneFrame = document.getElementById('phone-frame');
+      phoneFrame.classList.remove('accessibility-large-text', 'accessibility-xlarge-text');
+
+      document.getElementById('text-scale-normal').className = 'p-2.5 rounded-xl border border-slate-200 text-slate-700 text-center hover:bg-slate-50';
+      document.getElementById('text-scale-large').className = 'p-2.5 rounded-xl border border-slate-200 text-slate-700 text-center hover:bg-slate-50';
+      document.getElementById('text-scale-xlarge').className = 'p-2.5 rounded-xl border border-slate-200 text-slate-700 text-center hover:bg-slate-50';
+
+      if (scale === 'large') {
+        phoneFrame.classList.add('accessibility-large-text');
+        document.getElementById('text-scale-large').className = 'p-2.5 rounded-xl border-2 border-brand-petrol bg-brand-petrol text-white text-center';
+        showToast('Texto Grande Activado', 'Escala aumentada al 115% para lectura cómoda.', 'format_size');
+      } else if (scale === 'xlarge') {
+        phoneFrame.classList.add('accessibility-xlarge-text');
+        document.getElementById('text-scale-xlarge').className = 'p-2.5 rounded-xl border-2 border-brand-petrol bg-brand-petrol text-white text-center';
+        showToast('Texto Extra Grande Activado', 'Escala aumentada al 130% según norma WCAG.', 'format_size');
+      } else {
+        document.getElementById('text-scale-normal').className = 'p-2.5 rounded-xl border-2 border-brand-petrol bg-brand-petrol text-white text-center';
+        showToast('Texto Estándar', 'Escala tipográfica al 100%.', 'format_size');
+      }
+      accessibilityState.textScale = scale;
+    }
+
+    function setContrastMode(mode) {
+      const phoneFrame = document.getElementById('phone-frame');
+      const standardBtn = document.getElementById('contrast-standard-btn');
+      const highBtn = document.getElementById('contrast-high-btn');
+
+      if (mode === 'high') {
+        phoneFrame.classList.add('accessibility-high-contrast');
+        highBtn.className = 'p-2.5 rounded-xl border-2 border-brand-petrol bg-brand-petrol text-white flex items-center justify-center space-x-1 font-bold';
+        standardBtn.className = 'p-2.5 rounded-xl border border-slate-200 text-slate-700 flex items-center justify-center space-x-1 hover:bg-slate-50';
+        showToast('Alto Contraste AAA', 'Filtro de máximo contraste aplicado a elementos y bordes.', 'contrast');
+      } else {
+        phoneFrame.classList.remove('accessibility-high-contrast');
+        standardBtn.className = 'p-2.5 rounded-xl border-2 border-brand-petrol bg-brand-petrol/10 text-brand-petrol flex items-center justify-center space-x-1 font-bold';
+        highBtn.className = 'p-2.5 rounded-xl border border-slate-200 text-slate-700 flex items-center justify-center space-x-1 hover:bg-slate-50';
+        showToast('Contraste Estándar', 'Paleta original de Ciudad Escucha restaurada.', 'palette');
+      }
+      accessibilityState.contrast = mode;
+    }
+
+    function toggleReduceMotion() {
+      const phoneFrame = document.getElementById('phone-frame');
+      const toggle = document.getElementById('reduce-motion-toggle');
+      const knob = document.getElementById('reduce-motion-knob');
+      accessibilityState.reduceMotion = !accessibilityState.reduceMotion;
+
+      if (accessibilityState.reduceMotion) {
+        phoneFrame.classList.add('accessibility-reduce-motion');
+        toggle.className = 'w-11 h-6 bg-brand-petrol rounded-full relative transition-colors';
+        knob.className = 'w-5 h-5 bg-white rounded-full absolute right-0.5 top-0.5 transition-transform';
+        showToast('Reducción de Movimiento', 'Animaciones de pulso y transiciones desactivadas.', 'motion_photos_off');
+      } else {
+        phoneFrame.classList.remove('accessibility-reduce-motion');
+        toggle.className = 'w-11 h-6 bg-slate-200 rounded-full relative transition-colors';
+        knob.className = 'w-5 h-5 bg-white rounded-full absolute left-0.5 top-0.5 transition-transform';
+        showToast('Animaciones Activas', 'Pulsos visuales reactivados.', 'animation');
+      }
+    }
+
+    function toggleVoiceNarrationSetting() {
+      accessibilityState.voiceNarration = !accessibilityState.voiceNarration;
+      const enabled = accessibilityState.voiceNarration;
+      const toggle = document.getElementById('voice-narration-toggle');
+      const knob = document.getElementById('voice-narration-knob');
+      toggle.className = `w-11 h-6 ${enabled ? 'bg-brand-petrol' : 'bg-slate-200'} rounded-full relative transition-colors`;
+      knob.className = `w-5 h-5 bg-white rounded-full absolute ${enabled ? 'right-0.5' : 'left-0.5'} top-0.5 transition-transform`;
+      toggle.setAttribute('aria-pressed', String(enabled));
+      if (enabled) {
+        setVoiceFeedback('Narración activada. Pulsa los botones para escucharlos.');
+        speakTextNotification('Lectura por voz activada. Ahora leeré los botones que pulses.', true);
+      } else {
+        stopVoiceNarration();
+        setVoiceFeedback('Narración desactivada.');
+      }
+    }
+
+    function toggleDefaultViewModeSetting() {
+      accessibilityState.defaultListView = !accessibilityState.defaultListView;
+      const toggle = document.getElementById('default-list-toggle');
+      const knob = document.getElementById('default-list-knob');
+
+      if (accessibilityState.defaultListView) {
+        toggle.className = 'w-11 h-6 bg-brand-petrol rounded-full relative transition-colors';
+        knob.className = 'w-5 h-5 bg-white rounded-full absolute right-0.5 top-0.5 transition-transform';
+        isMapView = false;
+        document.getElementById('interactive-map-container').classList.add('hidden');
+        document.getElementById('accessible-list-container').classList.remove('hidden');
+        document.getElementById('view-mode-text').textContent = 'Mapa';
+        showToast('Preferencia Guardada', 'La vista de lista ahora es la predeterminada.', 'list');
+      } else {
+        toggle.className = 'w-11 h-6 bg-slate-200 rounded-full relative transition-colors';
+        knob.className = 'w-5 h-5 bg-white rounded-full absolute left-0.5 top-0.5 transition-transform';
+        isMapView = true;
+        document.getElementById('interactive-map-container').classList.remove('hidden');
+        document.getElementById('accessible-list-container').classList.add('hidden');
+        document.getElementById('view-mode-text').textContent = 'Lista';
+      }
+    }
+
+    // UTILIDADES: TOAST NOTIFICATIONS Y SÍNTESIS DE VOZ
+    let toastTimeout;
+    function showToast(title, message, icon = 'info') {
+      const toast = document.getElementById('toast-notification');
+      document.getElementById('toast-title').textContent = title;
+      document.getElementById('toast-message').textContent = message;
+      document.getElementById('toast-icon').textContent = icon;
+
+      toast.classList.add('toast-visible');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('toast-visible');
+      }, 3500);
+    }
+
+    let activeUtterance = null;
+    function setVoiceFeedback(text) {
+      const el = document.getElementById('voice-feedback');
+      if (el) el.textContent = text;
+    }
+    function stopVoiceNarration() {
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      activeUtterance = null;
+      setVoiceFeedback(accessibilityState.voiceNarration ? 'Lectura detenida.' : 'Narración desactivada.');
+    }
+    function chooseSpanishVoice() {
+      const voices = window.speechSynthesis.getVoices();
+      return voices.find(v => v.lang.toLowerCase() === 'es-pe') ||
+             voices.find(v => v.lang.toLowerCase().startsWith('es-')) ||
+             voices.find(v => v.lang.toLowerCase() === 'es') || null;
+    }
+    function speakTextNotification(text, force = false) {
+      if (!force && !accessibilityState.voiceNarration) return;
+      if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
+        setVoiceFeedback('Este navegador no admite síntesis de voz. Prueba Chrome o Edge.');
+        return;
+      }
+      const phrase = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 500);
+      if (!phrase) return;
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(phrase);
+        const voice = chooseSpanishVoice();
+        if (voice) utterance.voice = voice;
+        utterance.lang = voice ? voice.lang : 'es-ES';
+        utterance.rate = 0.92;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        activeUtterance = utterance;
+        utterance.onstart = () => setVoiceFeedback('Leyendo: ' + phrase.slice(0, 85));
+        utterance.onend = () => { if (activeUtterance === utterance) { activeUtterance = null; setVoiceFeedback('Lectura finalizada.'); } };
+        utterance.onerror = e => { if (e.error !== 'canceled' && e.error !== 'interrupted') setVoiceFeedback('No se pudo reproducir la voz. Comprueba el volumen y las voces del sistema.'); };
+        window.speechSynthesis.resume();
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        setVoiceFeedback('Error de voz: revisa la configuración de audio de tu navegador.');
+      }
+    }
+    function testVoiceNarration() {
+      speakTextNotification('Hola. Soy la voz de Ciudad Escucha. La lectura funciona correctamente.', true);
+    }
+    // Etiquetas legibles: no pronunciar nombres internos de iconos Material Symbols.
+    const spokenActions = {
+      'view-mode-toggle-btn': () => document.getElementById('view-mode-text').textContent.trim() === 'Lista' ? 'Cambiar a vista de lista' : 'Cambiar a vista de mapa',
+      'btn-support-action': () => document.getElementById('btn-support-label').textContent.trim(),
+      'mic-main-button': () => 'Iniciar o detener la grabación de voz',
+      'reduce-motion-toggle': () => 'Activar o desactivar las animaciones',
+      'default-list-toggle': () => 'Cambiar vista predeterminada',
+      'nav-btn-explorar': () => 'Ir a Explorar',
+      'nav-btn-reportar': () => 'Ir a Reportar',
+      'nav-btn-actividad': () => 'Ir a Actividad',
+      'nav-btn-perfil': () => 'Ir a Perfil'
+    };
+    const spokenRoutes = {
+      'explorar':'Explorar incidencias', 'reportar':'Crear un reporte',
+      'actividad':'Actividad comunitaria', 'perfil':'Mi perfil',
+      'voz':'Reporte por voz', 'accesibilidad':'Opciones de accesibilidad',
+      'mis-reportes':'Mis reportes', 'detalle-incidencia':'Detalle del reporte',
+      'operador':'Panel del operador municipal', 'reporte-exitoso':'Reporte registrado'
+    };
+    const spokenOperations = {
+      'navigateBack':'Volver a la pantalla anterior',
+      'closeIncidentBottomSheet':'Cerrar detalles del reporte',
+      'toggleLegendModal':'Mostrar u ocultar la leyenda del mapa',
+      'readAloudIncident':'Escuchar los detalles del reporte',
+      'shareIncidentModal':'Compartir reporte',
+      'centerMapOnUNI':'Centrar mapa cerca de la universidad',
+      'submitNewReportFlow':'Continuar con el reporte',
+      'saveOperatorStateAndNotify':'Guardar estado del reporte',
+      'toggleSupportCurrentIncident':'Apoyar o retirar apoyo al reporte',
+      'toggleReduceMotion':'Activar o desactivar animaciones',
+      'toggleDefaultViewModeSetting':'Cambiar vista predeterminada',
+      'toggleVoiceRecording':'Iniciar o detener grabación',
+      'setTextScale':'Cambiar tamaño del texto',
+      'setContrastMode':'Cambiar contraste',
+      'toggleMapViewMode':'Cambiar modo de visualización',
+      'navigateTo':'Abrir pantalla',
+      'setRole':'Cambiar tipo de usuario'
+    };
+    function readableControlLabel(target) {
+      if (spokenActions[target.id]) return spokenActions[target.id]();
+      const incidentMatch = (target.getAttribute('onclick') || '').match(/selectIncident\(['"]([^'"]+)/);
+      if (incidentMatch) {
+        const incident = incidentsData.find(item => item.id === incidentMatch[1]);
+        return incident ? 'Ver reporte: ' + incident.title + ', ' + incident.district : 'Consultar reporte';
+      }
+      const explicit = target.getAttribute('aria-label') || target.getAttribute('data-speech-label') || target.getAttribute('title');
+      if (explicit) return explicit.trim();
+      const action = target.getAttribute('onclick') || '';
+      const route = action.match(/navigateTo\(['"]([^'"]+)/);
+      if (route && (!target.innerText || target.innerText.trim().length < 3)) return spokenRoutes[route[1]] || 'Abrir pantalla';
+      const clone = target.cloneNode(true);
+      clone.querySelectorAll('.material-symbols-outlined, .material-icons, svg, img, [aria-hidden="true"], .sr-only').forEach(el => el.remove());
+      const phrase = (clone.innerText || clone.textContent || '').replace(/[_\s]+/g,' ').trim();
+      if (phrase) return phrase.slice(0, 140);
+      const operation = action.match(/^\s*([a-zA-Z_$][\w$]*)\s*\(/);
+      return operation ? spokenOperations[operation[1]] || 'Seleccionar opción' : '';
+    }
+    document.addEventListener('click', event => {
+      if (!accessibilityState.voiceNarration) return;
+      const target = event.target.closest('button, a, .incident-bubble, [role="button"], [onclick]');
+      if (!target || !document.getElementById('phone-frame').contains(target)) return;
+      if (target.id === 'voice-narration-toggle' || target.dataset.speechControl ||
+          (target.getAttribute('onclick') || '').includes('readAloudIncident(')) return;
+      const label = readableControlLabel(target);
+      if (label) speakTextNotification(label);
+    });
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.addEventListener?.('voiceschanged', () => window.speechSynthesis.getVoices());
+    }
+  </script>
+</body>
+</html>
